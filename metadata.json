@@ -1,0 +1,6 @@
+{
+  "name": "Simple Quiz App",
+  "description": "A student quiz application handling class codes and simple sample questions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
