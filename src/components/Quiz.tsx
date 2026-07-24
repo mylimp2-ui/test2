@@ -9,17 +9,42 @@ export default function Quiz() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [quizData, setQuizData] = useState<QuizData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch('/api/questions')
-      .then(res => res.json())
+  const fetchQuestions = () => {
+    setLoading(true);
+    setError(null);
+    fetch(`/api/questions?t=${Date.now()}`, {
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error(`서버 응답 오류 (상태 코드: ${res.status})`);
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error(`JSON 형식이 아닙니다. (Content-Type: ${contentType})`);
+        }
+        return res.json();
+      })
       .then(data => {
         if (data.success) {
           setQuizData(data.data);
+        } else {
+          setError(data.error || '알 수 없는 서버 오류가 발생했습니다.');
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        console.error(err);
+        setError(err.message || '네트워크 오류가 발생했습니다.');
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchQuestions();
   }, []);
 
   // Ensure user came from login
@@ -30,7 +55,21 @@ export default function Quiz() {
   const { classCode, studentCode } = location.state;
 
   if (loading) return <div className="min-h-screen bg-gray-50 flex justify-center p-12 text-gray-500">문제를 불러오는 중...</div>;
-  if (!quizData) return <div className="min-h-screen bg-gray-50 flex justify-center p-12 text-red-500">문제를 불러오지 못했습니다.</div>;
+  
+  if (error || !quizData) return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-12 text-red-500">
+      <div className="text-xl mb-4 font-bold">문제를 불러오지 못했습니다.</div>
+      <div className="text-sm bg-red-50 p-4 rounded-lg border border-red-200 text-red-700 mb-6">
+        {error || '데이터 형식이 올바르지 않습니다.'}
+      </div>
+      <button 
+        onClick={fetchQuestions}
+        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      >
+        다시 시도
+      </button>
+    </div>
+  );
 
   const questions = quizData.questions;
 

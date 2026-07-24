@@ -70,6 +70,7 @@ async function startServer() {
   });
 
   app.get("/api/questions", async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
     const questions = await getQuestions();
     res.json({ success: true, data: questions });
   });
